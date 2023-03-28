@@ -1,10 +1,12 @@
 ﻿using AngularDotNet6WebAPICRUD.Models;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace AngularDotNet6WebAPICRUD.Controllers
 {
+    //[EnableCors(origins: "*", headers: "*", methods: "*")]
     [Route("api/[controller]")]
     [ApiController]
     public class StudentController : ControllerBase
@@ -36,12 +38,19 @@ namespace AngularDotNet6WebAPICRUD.Controllers
 
         [HttpPatch]
         [Route("UpdateStudent/{id}")]
-        public async Task<Student> UpdateStudent(Student objStudent)
+        public async Task<ActionResult<Student>> UpdateStudent(Student objStudent)
         {
+            var studentExist = await _studentDbContext.Students.FindAsync(objStudent.Id);
 
-            _studentDbContext.Entry(objStudent).State = EntityState.Modified;
+            if (studentExist == null)
+                return BadRequest("Student not found!");
+
+            studentExist.Name = objStudent.Name;
+            studentExist.Course = objStudent.Course;
+            studentExist.Id = objStudent.Id;
             await _studentDbContext.SaveChangesAsync();
-            return objStudent;
+
+            return Ok(await _studentDbContext.Students.ToListAsync());
         }
 
         [HttpDelete]
@@ -57,7 +66,7 @@ namespace AngularDotNet6WebAPICRUD.Controllers
                 _studentDbContext.Entry(student).State = EntityState.Deleted;
                 _studentDbContext.SaveChanges();
             }
-            
+
             return a;
         }
     }
